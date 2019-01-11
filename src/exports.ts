@@ -181,3 +181,7 @@ export { default as MonthViewDateProfileGenerator } from './basic/MonthViewDateP
 export { default as ListView } from './list/ListView'
 export { default as ListEventPointing } from './list/ListEventPointing'
 export { default as ListEventRenderer } from './list/ListEventRenderer'
+export { default as YearView } from './basic/YearView'
+export { default as MonthGrid } from './basic/MonthGrid'
+
+

@@ -6,7 +6,7 @@ export interface DayTableInterface {
   daysPerRow: any
   rowCnt: any
   colCnt: any
-  updateDayTable()
+  updateDayTable(viewOpt?: string)
   renderHeadHtml()
   renderBgTrHtml(row)
   bookendCells(trEl)
@@ -30,10 +30,11 @@ export default class DayTableMixin extends Mixin implements DayTableInterface {
   rowCnt: any
   colCnt: any
   colHeadFormat: any
+  viewOpt = 'day'
 
 
   // Populates internal variables used for date calculation and rendering
-  updateDayTable() {
+  updateDayTable(viewOpt = 'day') {
     let t = (this as any)
     let view = t.view
     let calendar = view.calendar
@@ -46,6 +47,8 @@ export default class DayTableMixin extends Mixin implements DayTableInterface {
     let firstDay
     let rowCnt
 
+    this.viewOpt = viewOpt
+
     while (date.isBefore(end)) { // loop each day from start to end
       if (view.isHiddenDay(date)) {
         dayIndices.push(dayIndex + 0.5) // mark that it's between indices
@@ -54,14 +57,14 @@ export default class DayTableMixin extends Mixin implements DayTableInterface {
         dayIndices.push(dayIndex)
         dayDates.push(date.clone())
       }
-      date.add(1, 'days')
+      date.add(1, this.viewOpt)
     }
 
     if (this.breakOnWeeks) {
       // count columns until the day-of-week repeats
-      firstDay = dayDates[0].day()
+      firstDay = dayDates[0][this.viewOpt]()
       for (daysPerRow = 1; daysPerRow < dayDates.length; daysPerRow++) {
-        if (dayDates[daysPerRow].day() === firstDay) {
+        if (dayDates[daysPerRow][this.viewOpt]() === firstDay) {
           break
         }
       }
@@ -107,7 +110,7 @@ export default class DayTableMixin extends Mixin implements DayTableInterface {
   // Computes the ambiguously-timed date range for the given cell
   getCellRange(row, col) {
     let start = this.getCellDate(row, col)
-    let end = start.clone().add(1, 'days')
+    let end = start.clone().add(1, this.viewOpt)
 
     return { start: start, end: end }
   }
@@ -136,7 +139,7 @@ export default class DayTableMixin extends Mixin implements DayTableInterface {
   // Only works for *start* dates of cells. Will not work for exclusive end dates for cells.
   getDateDayIndex(date) {
     let dayIndices = this.dayIndices
-    let dayOffset = date.diff(this.dayDates[0], 'days')
+    let dayOffset = date.diff(this.dayDates[0], this.viewOpt)
 
     if (dayOffset < 0) {
       return dayIndices[0] - 1
@@ -154,6 +157,9 @@ export default class DayTableMixin extends Mixin implements DayTableInterface {
 
   // Computes a default column header formatting string if `colFormat` is not explicitly defined
   computeColHeadFormat() {
+    if (this.viewOpt === 'month') {
+      return 'MMM'
+    }
     // if more than one week row, or if there are a lot of columns with not much space,
     // put just the day numbers will be in each cell
     if (this.rowCnt > 1 || this.colCnt > 10) {
@@ -175,7 +181,7 @@ export default class DayTableMixin extends Mixin implements DayTableInterface {
     let daysPerRow = this.daysPerRow
     let normalRange = (this as any).view.computeDayRange(unzonedRange) // make whole-day range, considering nextDayThreshold
     let rangeFirst = this.getDateDayIndex(normalRange.start) // inclusive first index
-    let rangeLast = this.getDateDayIndex(normalRange.end.clone().subtract(1, 'days')) // inclusive last index
+    let rangeLast = this.getDateDayIndex(normalRange.end.clone().subtract(1, this.viewOpt)) // inclusive last index
     let segs = []
     let row
     let rowFirst
@@ -220,7 +226,7 @@ export default class DayTableMixin extends Mixin implements DayTableInterface {
     let daysPerRow = this.daysPerRow
     let normalRange = (this as any).view.computeDayRange(unzonedRange) // make whole-day range, considering nextDayThreshold
     let rangeFirst = this.getDateDayIndex(normalRange.start) // inclusive first index
-    let rangeLast = this.getDateDayIndex(normalRange.end.clone().subtract(1, 'days')) // inclusive last index
+    let rangeLast = this.getDateDayIndex(normalRange.end.clone().subtract(1, this.viewOpt)) // inclusive last index
     let segs = []
     let row
     let rowFirst
