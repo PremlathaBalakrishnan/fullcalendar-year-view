@@ -2,6 +2,13 @@ import { defineView } from '../ViewRegistry'
 import View from '../View'
 import Scroller from '../common/Scroller'
 import MonthGrid from './MonthGrid'
+import {
+  uncompensateScroll,
+  compensateScroll,
+  subtractInnerElHeight,
+  distributeHeight,
+  undistributeHeight
+} from '../util'
 
 export default class YearView extends View {
   monthGrid: any
@@ -75,6 +82,81 @@ export default class YearView extends View {
           '</tr>' +
         '</tbody>' +
       '</table>'
+  }
+
+  // Refreshes the horizontal dimensions of the view
+  updateSize(totalHeight, isAuto, isResize) {
+    let eventLimit = this.opt('eventLimit')
+    let headRowEl = this.monthGrid.headContainerEl.find('.fc-row')
+    let scrollerHeight
+    let scrollbarWidths
+
+    // hack to give the view some height prior to monthGrid's columns being rendered
+    // TODO: separate setting height from scroller VS monthGrid.
+    if (!this.monthGrid.rowEls) {
+      if (!isAuto) {
+        scrollerHeight = this.computeScrollerHeight(totalHeight)
+        this.scroller.setHeight(scrollerHeight)
+      }
+      return
+    }
+
+    super.updateSize(totalHeight, isAuto, isResize)
+
+    // reset all heights to be natural
+    this.scroller.clear()
+    uncompensateScroll(headRowEl)
+
+    this.monthGrid.removeSegPopover() // kill the "more" popover if displayed
+
+    // is the event limit a constant level number?
+    if (eventLimit && typeof eventLimit === 'number') {
+      this.monthGrid.limitRows(eventLimit) // limit the levels first so the height can redistribute after
+    }
+
+    // distribute the height to the rows
+    // (totalHeight is a "recommended" value if isAuto)
+    scrollerHeight = this.computeScrollerHeight(totalHeight)
+    this.setGridHeight(scrollerHeight, isAuto)
+
+    // is the event limit dynamically calculated?
+    if (eventLimit && typeof eventLimit !== 'number') {
+      this.monthGrid.limitRows(eventLimit) // limit the levels after the grid's row heights have been set
+    }
+
+    if (!isAuto) { // should we force dimensions of the scroll container?
+
+      this.scroller.setHeight(scrollerHeight)
+      scrollbarWidths = this.scroller.getScrollbarWidths()
+
+      if (scrollbarWidths.left || scrollbarWidths.right) { // using scrollbars?
+
+        compensateScroll(headRowEl, scrollbarWidths)
+
+        // doing the scrollbar compensation might have created text overflow which created more height. redo
+        scrollerHeight = this.computeScrollerHeight(totalHeight)
+        this.scroller.setHeight(scrollerHeight)
+      }
+
+      // guarantees the same scrollbar widths
+      this.scroller.lockOverflow(scrollbarWidths)
+    }
+  }
+
+  // Sets the height of just the DayGrid component in this view
+  setGridHeight(height, isAuto) {
+    if (isAuto) {
+      undistributeHeight(this.monthGrid.rowEls) // let the rows be their natural height with no expanding
+    } else {
+      distributeHeight(this.monthGrid.rowEls, height, true) // true = compensate for height-hogging rows
+    }
+  }
+
+
+  // given a desired total height of the view, returns what the height of the scroller should be
+  computeScrollerHeight(totalHeight) {
+    return totalHeight -
+      subtractInnerElHeight(this.el, this.scroller.el) // everything that's NOT the scroller
   }
 }
 
