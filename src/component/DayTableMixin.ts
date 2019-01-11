@@ -137,17 +137,26 @@ export default class DayTableMixin extends Mixin implements DayTableInterface {
   // If before the first offset, returns a negative number.
   // If after the last offset, returns an offset past the last cell offset.
   // Only works for *start* dates of cells. Will not work for exclusive end dates for cells.
-  getDateDayIndex(date) {
+  getDateDayIndex(date, point) {
     let dayIndices = this.dayIndices
-    let dayOffset = date.diff(this.dayDates[0], this.viewOpt)
-
+    let dayOffset = date.diff(this.dayDates[0], this.viewOpt, true)
+    if(this.viewOpt === 'month') {
+      if (dayOffset < 1) {
+        return dayIndices[0];
+      } else {
+        if (point === 'end') {
+          return dayIndices[Math.ceil(dayOffset)];
+        }
+      }
+    }
     if (dayOffset < 0) {
       return dayIndices[0] - 1
     } else if (dayOffset >= dayIndices.length) {
       return dayIndices[dayIndices.length - 1] + 1
-    } else {
-      return dayIndices[dayOffset]
     }
+
+    return dayIndices[Math.floor(dayOffset)];
+
   }
 
 
@@ -180,14 +189,18 @@ export default class DayTableMixin extends Mixin implements DayTableInterface {
   sliceRangeByRow(unzonedRange) {
     let daysPerRow = this.daysPerRow
     let normalRange = (this as any).view.computeDayRange(unzonedRange) // make whole-day range, considering nextDayThreshold
-    let rangeFirst = this.getDateDayIndex(normalRange.start) // inclusive first index
-    let rangeLast = this.getDateDayIndex(normalRange.end.clone().subtract(1, this.viewOpt)) // inclusive last index
+    let rangeFirst = this.getDateDayIndex(normalRange.start, 'start') // inclusive first index
+    let rangeLast = this.getDateDayIndex(normalRange.end.clone().subtract(1, this.viewOpt), 'end') // inclusive last index
     let segs = []
     let row
     let rowFirst
     let rowLast // inclusive day-index range for current row
     let segFirst
     let segLast // inclusive day-index range for segment
+
+    if (rangeFirst > rangeLast) {
+      rangeLast = rangeFirst
+    }
 
     for (row = 0; row < this.rowCnt; row++) {
       rowFirst = row * daysPerRow
@@ -225,8 +238,8 @@ export default class DayTableMixin extends Mixin implements DayTableInterface {
   sliceRangeByDay(unzonedRange) {
     let daysPerRow = this.daysPerRow
     let normalRange = (this as any).view.computeDayRange(unzonedRange) // make whole-day range, considering nextDayThreshold
-    let rangeFirst = this.getDateDayIndex(normalRange.start) // inclusive first index
-    let rangeLast = this.getDateDayIndex(normalRange.end.clone().subtract(1, this.viewOpt)) // inclusive last index
+    let rangeFirst = this.getDateDayIndex(normalRange.start, 'start') // inclusive first index
+    let rangeLast = this.getDateDayIndex(normalRange.end.clone().subtract(1, this.viewOpt), 'end') // inclusive last index
     let segs = []
     let row
     let rowFirst
