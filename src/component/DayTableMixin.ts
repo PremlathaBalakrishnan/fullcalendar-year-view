@@ -373,7 +373,11 @@ export default class DayTableMixin extends Mixin implements DayTableInterface {
         (isDateValid ?
           // don't make a link if the heading could represent multiple days, or if there's only one day (forceOff)
           view.buildGotoAnchorHtml(
-            { date: date, forceOff: t.rowCnt > 1 || t.colCnt === 1 },
+            {
+              date: date,
+              forceOff: t.rowCnt > 1 || t.colCnt === 1,
+              type: this.viewOpt
+            },
             innerHtml
           ) :
           // if not valid, display text, but no link
