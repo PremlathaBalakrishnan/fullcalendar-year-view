@@ -140,13 +140,11 @@ export default class DayTableMixin extends Mixin implements DayTableInterface {
   getDateDayIndex(date, point) {
     let dayIndices = this.dayIndices
     let dayOffset = date.diff(this.dayDates[0], this.viewOpt, true)
-    if(this.viewOpt === 'month') {
-      if (dayOffset < 1) {
-        return dayIndices[0];
-      } else {
-        if (point === 'end') {
-          return dayIndices[Math.ceil(dayOffset)];
-        }
+    if (this.viewOpt === 'month') {
+      if (point === 'end') {
+        return dayIndices[Math.ceil(dayOffset)] || dayIndices[0]
+      } else if (dayOffset < 1) {
+        return dayIndices[0]
       }
     }
     if (dayOffset < 0) {
@@ -155,7 +153,7 @@ export default class DayTableMixin extends Mixin implements DayTableInterface {
       return dayIndices[dayIndices.length - 1] + 1
     }
 
-    return dayIndices[Math.floor(dayOffset)];
+    return dayIndices[Math.floor(dayOffset)]
 
   }
 
