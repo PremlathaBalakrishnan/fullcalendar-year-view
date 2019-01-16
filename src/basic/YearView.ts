@@ -1,3 +1,4 @@
+import * as $ from 'jquery'
 import { defineView } from '../ViewRegistry'
 import View from '../View'
 import Scroller from '../common/Scroller'
